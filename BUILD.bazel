@@ -58,12 +58,18 @@ npm_package(
 vitest_bin.vitest_test(
     name = "test",
     data = [
+        ".github/lanes.json",
+        "BUILD.bazel",
+        "docs/gf-v4-qualification.candidate.yml",
         ":node_modules",
         ":node_modules/@tummycrypt/tinyland-content-types",
         "tsconfig.json",
         ":node_modules/vitest",
         "vitest.config.ts",
-    ] + glob(["src/**/*.ts"]) + glob(["tests/**/*.test.ts", "tests/**/*.ts"]),
+    ] + glob(["src/**/*.ts"]) + glob(["tests/**/*.test.ts", "tests/**/*.ts"]) + glob([
+        ".github/workflows/*.yml",
+        ".github/workflows/*.yaml",
+    ]),
     args = [
         "run",
         "--reporter=verbose",
