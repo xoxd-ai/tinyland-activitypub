@@ -7,6 +7,10 @@ import { handleFollowActivity } from '../src/services/SocialActivityService.js';
 import { getFollowers } from '../src/services/FollowersService.js';
 import type { Follow } from '../src/types/activitystreams.js';
 
+vi.mock('../src/utils/publicFederationFetch.js', () => ({
+  publicFederationFetch: (input: string | URL | Request, init?: RequestInit) => fetch(input, init),
+}));
+
 // TIN-2645: inbound Follow handling must fail closed — an inbound Follow is only
 // auto-accepted when autoApproveFollows is explicitly `true`. Any other value
 // (unset default, undefined, or truthy-but-not-true) leaves it pending.

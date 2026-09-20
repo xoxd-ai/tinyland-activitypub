@@ -12,6 +12,8 @@ import { join } from 'path';
 
 export interface ActivityPubConfig {
   siteBaseUrl: string;
+  /** Personal actor authority; omitted values preserve the siteBaseUrl origin. */
+  userActorBaseUrl?: string;
   federationEnabled: boolean;
   defaultVisibility: 'public' | 'unlisted' | 'followers' | 'private';
   autoApproveFollows: boolean;
@@ -51,10 +53,9 @@ export interface ActivityPubConfig {
 
 
 const defaults: ActivityPubConfig = {
-  // TIN-1456: hub.tinyland.dev is the SOLE public ActivityPub authority. The
-  // apex (tinyland.dev) is tailnet-only and must never mint AP ids, so the
-  // default deliberately ignores PUBLIC_SITE_URL / SITE_URL (both apex-bound
-  // in deployment) and anchors on the federation origin instead.
+  // TIN-1456: preserve the hub as the default broker/brand authority. Personal
+  // actors may explicitly use userActorBaseUrl without moving brand identities.
+  // Ignore PUBLIC_SITE_URL / SITE_URL, which historically pointed at the apex.
   siteBaseUrl:
     process.env.TINYLAND_FEDERATION_ORIGIN || 'https://hub.tinyland.dev',
   federationEnabled: true,
@@ -130,6 +131,19 @@ export function resetActivityPubConfig(): void {
 
 export function getSiteBaseUrl(): string {
   return getActivityPubConfig().siteBaseUrl.replace(/\/$/, '');
+}
+
+/** Keep personal actor routing independent of the broker/brand origin. */
+export function getUserActorBaseUrl(): string {
+  return (getActivityPubConfig().userActorBaseUrl ?? getSiteBaseUrl()).replace(/\/$/, '');
+}
+
+export function getUserActorDomain(): string {
+  try {
+    return new URL(getUserActorBaseUrl()).hostname;
+  } catch {
+    return getInstanceDomain();
+  }
 }
 
 
@@ -286,7 +300,7 @@ export const BOOSTABLE_TYPES = new Set([
 
 
 export function getActorUri(handle: string): string {
-  return `${getSiteBaseUrl()}/@${handle}`;
+  return `${getUserActorBaseUrl()}/@${handle}`;
 }
 
 
@@ -328,7 +342,7 @@ export function getLikedUri(handle: string): string {
 
 
 export function getWebFingerResource(handle: string): string {
-  return `acct:${handle}@${getInstanceDomain()}`;
+  return `acct:${handle}@${getUserActorDomain()}`;
 }
 
 
@@ -368,7 +382,7 @@ export function gatedAudience(
 export function isLocalUri(uri: string): boolean {
   try {
     const url = new URL(uri);
-    return url.hostname === getInstanceDomain();
+    return url.hostname === getInstanceDomain() || url.hostname === getUserActorDomain();
   } catch {
     return false;
   }
@@ -380,7 +394,8 @@ export function isLocalUri(uri: string): boolean {
 export function extractHandleFromUri(uri: string): string | null {
   try {
     const url = new URL(uri);
-    if (url.hostname !== getInstanceDomain()) {
+    // The broker is local, but is not a second identity for a personal actor.
+    if (url.hostname !== getUserActorDomain()) {
       return null;
     }
 

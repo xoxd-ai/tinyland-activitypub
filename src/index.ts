@@ -14,6 +14,8 @@ export {
   resetActivityPubConfig,
   getSiteBaseUrl,
   getInstanceDomain,
+  getUserActorBaseUrl,
+  getUserActorDomain,
   getActivityPubDir,
   getContentDir,
   getUsersContentDir,

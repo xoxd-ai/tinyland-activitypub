@@ -14,6 +14,7 @@ import {
 } from 'fs';
 import { join } from 'path';
 import { getActivityPubConfig, getRemoteActorsCacheDir } from '../config.js';
+import { publicFederationFetch } from '../utils/publicFederationFetch.js';
 
 
 
@@ -126,16 +127,16 @@ export function parseSignatureHeader(signatureHeader: string): SignatureHeader |
 
 
 export async function getPublicKey(keyId: string): Promise<PublicKeyInfo | null> {
+  const actorUri = keyId.split('#')[0];
   const cachedKey = getCachedPublicKey(keyId);
   const config = getActivityPubConfig();
 
-  if (cachedKey && !isKeyExpired(cachedKey)) {
+  if (cachedKey && cachedKey.id === keyId && cachedKey.owner === actorUri && !isKeyExpired(cachedKey)) {
     return cachedKey;
   }
 
   try {
-    const actorUri = keyId.split('#')[0];
-    const response = await fetch(actorUri, {
+    const response = await publicFederationFetch(actorUri, {
       headers: {
         'Accept': 'application/activity+json'
       },
@@ -166,8 +167,8 @@ export async function getPublicKey(keyId: string): Promise<PublicKeyInfo | null>
     cachePublicKey(keyId, keyInfo);
 
     return keyInfo;
-  } catch (err) {
-    console.error('[HttpSignatureService] Failed to fetch actor:', err);
+  } catch {
+    console.error('[HttpSignatureService] Failed to fetch or validate actor key');
     return null;
   }
 }
@@ -177,20 +178,12 @@ export async function getPublicKey(keyId: string): Promise<PublicKeyInfo | null>
 
 
 function extractPublicKeyFromActor(actor: any, keyId: string): string | null {
-  if (actor.publicKey) {
-    const publicKey = typeof actor.publicKey === 'string'
-      ? actor.publicKey
-      : actor.publicKey;
-
-    if (publicKey.id === keyId && publicKey.publicKeyPem) {
-      return publicKey.publicKeyPem;
-    }
-  }
-
-  if (actor.publicKey && typeof actor.publicKey === 'object') {
-    if (actor.publicKey.publicKeyPem) {
-      return actor.publicKey.publicKeyPem;
-    }
+  const actorUri = keyId.split('#')[0];
+  const publicKey = actor?.publicKey;
+  if (actor?.id === actorUri && publicKey?.id === keyId &&
+      publicKey.owner === actorUri && typeof publicKey.publicKeyPem === 'string' &&
+      publicKey.publicKeyPem.length > 0) {
+    return publicKey.publicKeyPem;
   }
 
   return null;
