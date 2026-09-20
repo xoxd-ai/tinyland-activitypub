@@ -12,6 +12,14 @@ import { join } from 'path';
 
 export interface ActivityPubConfig {
   siteBaseUrl: string;
+  // TIN-2111 (ratified 2026-09-20): the live user actor is a second,
+  // deliberately separate public identity from the broker-projection actor
+  // and anchors on its own base URL instead of siteBaseUrl. Optional and
+  // defaulting to siteBaseUrl so every existing caller (the broker path,
+  // content publishing, generic WebFinger) is unaffected when this is left
+  // unset; only getActorByHandle's opt-in useLiveUserActorBaseUrl path reads
+  // it (see getLiveUserActorBaseUrl() below).
+  liveUserActorBaseUrl?: string;
   federationEnabled: boolean;
   defaultVisibility: 'public' | 'unlisted' | 'followers' | 'private';
   autoApproveFollows: boolean;
@@ -130,6 +138,18 @@ export function resetActivityPubConfig(): void {
 
 export function getSiteBaseUrl(): string {
   return getActivityPubConfig().siteBaseUrl.replace(/\/$/, '');
+}
+
+
+
+
+// TIN-2111 (ratified 2026-09-20): the live user actor's own base URL,
+// falling back to siteBaseUrl when liveUserActorBaseUrl is not configured.
+// Read only by getActorByHandle's opt-in useLiveUserActorBaseUrl path; the
+// broker-projection actor path (the siteBaseUrl default above) is untouched.
+export function getLiveUserActorBaseUrl(): string {
+  const config = getActivityPubConfig();
+  return (config.liveUserActorBaseUrl ?? config.siteBaseUrl).replace(/\/$/, '');
 }
 
 
