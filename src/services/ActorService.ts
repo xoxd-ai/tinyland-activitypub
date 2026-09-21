@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from '
 import { join } from 'path';
 import crypto from 'crypto';
 import type { Actor, ActorImage, ActorPublicKey, ActorPropertyValue } from '../types/actor.js';
-import { getSiteBaseUrl, getActorsDir, getActorUri } from '../config.js';
+import { getSiteBaseUrl, getActorsDir, getLiveUserActorBaseUrl } from '../config.js';
 
 // --- Private key encryption at rest (AES-256-GCM) ---
 const AP_KEY_ALGO = 'aes-256-gcm';
@@ -345,19 +345,33 @@ export function createActorFromUser(user: ActorUser, profile?: ActorProfile): Ac
 
 
 
-export function getActorByHandle(handle: string): Actor | null {
+export function getActorByHandle(
+  handle: string,
+  options?: { useLiveUserActorBaseUrl?: boolean }
+): Actor | null {
   const storedActor = getStoredActor(handle);
-  const baseUrl = getSiteBaseUrl();
 
   if (!storedActor) {
     return null;
   }
 
+  // TIN-2111 (ratified 2026-09-20): the live user actor is a second,
+  // deliberately separate public identity from the broker-projection actor
+  // and anchors on liveUserActorBaseUrl (see config.ts) rather than
+  // siteBaseUrl. This is opt-in per call, off by default, so the broker
+  // path -- every existing caller: content publishing, generic WebFinger,
+  // the outbox/following/featured/liked collection routes -- is
+  // byte-for-byte unchanged when this option is omitted.
+  const baseUrl = options?.useLiveUserActorBaseUrl
+    ? getLiveUserActorBaseUrl()
+    : getSiteBaseUrl();
+
   // TIN-1456: never trust the persisted actor id as an AP authority. Actors
   // minted before the hub cutover carry apex (tinyland.dev) ids on disk;
   // re-anchor id, key id, and every derived collection URI on the configured
-  // federation origin at read time.
-  const actorId = getActorUri(storedActor.handle);
+  // federation origin (siteBaseUrl, or liveUserActorBaseUrl above) at read
+  // time.
+  const actorId = `${baseUrl}/@${storedActor.handle}`;
   const publicKeyId = `${actorId}#main-key`;
 
   return {
