@@ -28,6 +28,5 @@ jobs:
       package_dir: ./bazel-bin/pkg
       npm_access: public
       npm_publish_mode: disabled
-      github_package_name: "@xoxd-ai/tinyland-activitypub"
       dry_run: true
     secrets: inherit
