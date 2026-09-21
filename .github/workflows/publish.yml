@@ -34,5 +34,9 @@ jobs:
       npm_publish_mode: disabled
       github_package_name: "@xoxd-ai/tinyland-activitypub"
       dry_run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
-    secrets:
-      TINYLAND_GITHUB_PACKAGES_TOKEN: ${{ secrets.TINYLAND_GITHUB_PACKAGES_TOKEN }}
+    # No secrets are passed on purpose. The template publishes to GitHub
+    # Packages with the workflow GITHUB_TOKEN when TINYLAND_GITHUB_PACKAGES_TOKEN
+    # is absent, and this workflow grants packages: write above. The package
+    # scope is the repository owner, which is exactly what GITHUB_TOKEN may
+    # write. The org secret stopped authenticating after the org rename
+    # (release v0.3.2, run 35559338282: 401 on the PUT).
