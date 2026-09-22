@@ -6,6 +6,7 @@
 export {
   type ActorUser,
   type ActorActivationUser,
+  type ActorReadOptions,
   type ActorProfile,
   type StoredActor,
   generateKeyPair,

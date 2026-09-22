@@ -37,6 +37,21 @@ the personal origin. Changing the origin of an already owner-bound actor is
 not an automatic identity migration: activation and owner-aware reads fail
 closed until an explicit migration is performed.
 
+The released 0.3.2 setting `liveUserActorBaseUrl` has a separate, narrower
+meaning: it selects the view for an unbound legacy actor only when a read uses
+`getActorByHandle(handle, { useLiveUserActorBaseUrl: true })`. It falls back
+to `siteBaseUrl`, not `userActorBaseUrl`; it does not change generic personal
+URI helpers. Unbound reads without that option retain the broker/site view.
+Applications that serve a legacy operator actor on the same origin as new
+personal actors should explicitly configure both settings to that origin and
+select the live view for the operator path.
+
+Member reads accept either the owner-ID string shown above or
+`{ expectedOwnerId: principal.id, useLiveUserActorBaseUrl: true }`. Both enforce
+the same binding. Owner-bound records are never alternate-origin views: a live
+option whose origin differs from persisted canonical identity rejects, even
+if the owner ID matches. Omitting the option never bypasses key/custody checks.
+
 ## Successful activation
 
 `ensureActorForUser` returns only after the actor record is persisted, flushed,
@@ -84,6 +99,8 @@ use the owner-bound ensure API, not implicit legacy record adoption.
 ## Validation
 
 `//:test` includes the activation and origin regression tests through the
-existing test glob. `//:pkg` checks the published TypeScript surface. Remote
-GloriousFlywheel-backed package CI remains landing authority; local Vitest and
+existing test glob. `//:pkg` checks the published TypeScript surface.
+`//:package_artifact_test` checks that actual package directory's manifest,
+declared ESM/declaration files and locked `publint` results without repacking.
+Remote GloriousFlywheel-backed package CI remains landing authority; local Vitest and
 TypeScript runs are development diagnostics only.

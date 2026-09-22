@@ -10,7 +10,10 @@ import {
 import { dirname, join } from 'path';
 import crypto from 'crypto';
 import type { Actor, ActorImage, ActorPublicKey, ActorPropertyValue } from '../types/actor.js';
-import { getUserActorBaseUrl, getActorsDir, getActorUri } from '../config.js';
+import {
+  getSiteBaseUrl, getLiveUserActorBaseUrl, getUserActorBaseUrl,
+  getActorsDir, getActorUri,
+} from '../config.js';
 
 // --- Private key encryption at rest (AES-256-GCM) ---
 const AP_KEY_ALGO = 'aes-256-gcm';
@@ -88,6 +91,13 @@ export interface ActorUser {
 
 export interface ActorActivationUser extends ActorUser {
   id: string;
+}
+
+export interface ActorReadOptions {
+  /** Released legacy view option; cannot re-anchor owner-bound custody. */
+  useLiveUserActorBaseUrl?: boolean;
+  /** Stable principal identity, equivalent to the owner-ID string argument. */
+  expectedOwnerId?: string;
 }
 
 
@@ -475,7 +485,22 @@ export function createActorFromUser(user: ActorUser, profile?: ActorProfile): Ac
 
 
 
-export function getActorByHandle(handle: string, expectedOwnerId?: string): Actor | null {
+export function getActorByHandle(
+  handle: string,
+  optionsOrOwner?: ActorReadOptions | string,
+): Actor | null {
+  if (optionsOrOwner !== undefined && typeof optionsOrOwner !== 'string' &&
+      (typeof optionsOrOwner !== 'object' || optionsOrOwner === null || Array.isArray(optionsOrOwner))) {
+    throw new Error('Invalid ActivityPub actor read options');
+  }
+  const options: ActorReadOptions = typeof optionsOrOwner === 'string'
+    ? { expectedOwnerId: optionsOrOwner }
+    : optionsOrOwner ?? {};
+  if (options.useLiveUserActorBaseUrl !== undefined &&
+      typeof options.useLiveUserActorBaseUrl !== 'boolean') {
+    throw new Error('Invalid ActivityPub actor read options');
+  }
+  const expectedOwnerId = options.expectedOwnerId;
   if (expectedOwnerId !== undefined) validateOwnerId(expectedOwnerId);
   const storedActor = getStoredActor(handle);
 
@@ -483,20 +508,32 @@ export function getActorByHandle(handle: string, expectedOwnerId?: string): Acto
     return null;
   }
   if (expectedOwnerId !== undefined) assertOwner(storedActor, expectedOwnerId);
-  // Legacy callers must not silently re-anchor an owner-bound actor after an
-  // origin change, or expose corrupted custody just by omitting an owner ID.
-  if (storedActor.ownerId !== undefined) verifyOwnedCustody(storedActor, storedActor.ownerId);
-  return actorFromStored(storedActor);
+  if (storedActor.ownerId !== undefined) {
+    // An owned actor has one canonical identity, even for legacy callers that
+    // omit an owner ID or request the released live-user view. That option
+    // cannot bypass custody checks or reinterpret a key on another origin.
+    verifyOwnedCustody(storedActor, storedActor.ownerId);
+    if (options.useLiveUserActorBaseUrl &&
+        storedActor.id !== `${getLiveUserActorBaseUrl()}/@${storedActor.handle}`) {
+      throw new Error('Owner-bound ActivityPub actor live origin does not match configured identity');
+    }
+    return actorFromStored(storedActor);
+  }
+  // Preserve 0.3.2's per-read legacy view exactly. A global personal-authority
+  // setting must not silently turn an unbound broker actor into its live view.
+  return actorFromStored(storedActor, options.useLiveUserActorBaseUrl
+    ? getLiveUserActorBaseUrl()
+    : getSiteBaseUrl());
 }
 
-function actorFromStored(storedActor: StoredActor): Actor {
-  const baseUrl = getUserActorBaseUrl();
+function actorFromStored(storedActor: StoredActor, baseUrl = getUserActorBaseUrl()): Actor {
 
   // TIN-1456: never trust the persisted actor id as an AP authority. Actors
   // minted before the hub cutover carry apex (tinyland.dev) ids on disk;
   // re-anchor id, key id, and every derived collection URI on the configured
-  // federation origin at read time.
-  const actorId = getActorUri(storedActor.handle);
+  // selected legacy view at read time. Owned records reach this helper only
+  // after their persisted identity is verified against the personal origin.
+  const actorId = `${baseUrl}/@${storedActor.handle}`;
   const publicKeyId = `${actorId}#main-key`;
 
   return {

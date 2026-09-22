@@ -14,6 +14,8 @@ export interface ActivityPubConfig {
   siteBaseUrl: string;
   /** Personal actor authority; omitted values preserve the siteBaseUrl origin. */
   userActorBaseUrl?: string;
+  /** Released 0.3.2 per-read legacy actor view; does not change URI helpers. */
+  liveUserActorBaseUrl?: string;
   federationEnabled: boolean;
   defaultVisibility: 'public' | 'unlisted' | 'followers' | 'private';
   autoApproveFollows: boolean;
@@ -131,6 +133,12 @@ export function resetActivityPubConfig(): void {
 
 export function getSiteBaseUrl(): string {
   return getActivityPubConfig().siteBaseUrl.replace(/\/$/, '');
+}
+
+/** Released 0.3.2 view override, deliberately independent of userActorBaseUrl. */
+export function getLiveUserActorBaseUrl(): string {
+  const config = getActivityPubConfig();
+  return (config.liveUserActorBaseUrl ?? config.siteBaseUrl).replace(/\/$/, '');
 }
 
 /** Keep personal actor routing independent of the broker/brand origin. */

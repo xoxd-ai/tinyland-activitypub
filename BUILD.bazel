@@ -5,6 +5,7 @@ Dual-mode build: works with both pnpm (standalone) and Bazel (CI/production).
   Standalone: cd packages/tinyland-activitypub && pnpm build
 """
 
+load("@aspect_rules_js//js:defs.bzl", "js_test")
 load("@aspect_rules_js//npm:defs.bzl", "npm_link_package", "npm_package")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_project")
 load("@tummycrypt_tinyland_activitypub_npm//:defs.bzl", "npm_link_all_packages")
@@ -51,7 +52,23 @@ npm_package(
         ":tinyland_activitypub",
     ],
     package = "@tummycrypt/tinyland-activitypub",
-    version = "0.3.0",
+    version = "0.3.3",
+    publishable = False,
+    visibility = ["//visibility:public"],
+)
+
+# Validate the actual Bazel package directory with the locked third-party
+# validator, without package-manager packing or provider publication.
+js_test(
+    name = "package_artifact_test",
+    entry_point = "scripts/check-package-artifact.mjs",
+    args = ["$(rootpath :pkg)"],
+    data = [
+        ":pkg",
+        ":node_modules/publint",
+        "package.json",
+        "scripts/check-package-artifact.mjs",
+    ],
     visibility = ["//visibility:public"],
 )
 
@@ -60,16 +77,22 @@ vitest_bin.vitest_test(
     data = [
         ".github/lanes.json",
         "BUILD.bazel",
+        "MODULE.bazel",
         "docs/gf-v4-qualification.candidate.yml",
+        "package.json",
+        "scripts/check-package-artifact.mjs",
         ":node_modules",
         ":node_modules/@tummycrypt/tinyland-content-types",
         "tsconfig.json",
         ":node_modules/vitest",
         "vitest.config.ts",
-    ] + glob(["src/**/*.ts"]) + glob(["tests/**/*.test.ts", "tests/**/*.ts"]) + glob([
-        ".github/workflows/*.yml",
-        ".github/workflows/*.yaml",
-    ]),
+    ] + glob(["src/**/*.ts"]) + glob(["tests/**/*.test.ts", "tests/**/*.ts"]) + glob(
+        [
+            ".github/workflows/*.yml",
+            ".github/workflows/*.yaml",
+        ],
+        allow_empty = True,  # Legacy callers retired; the GF candidate remains inert.
+    ),
     args = [
         "run",
         "--reporter=verbose",

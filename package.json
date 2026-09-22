@@ -1,6 +1,6 @@
 {
   "name": "@tummycrypt/tinyland-activitypub",
-  "version": "0.3.1",
+  "version": "0.3.3",
   "description": "ActivityPub federation system for Tinyland",
   "type": "module",
   "license": "Zlib AND LicenseRef-Tinyland-Proprietary",
@@ -59,10 +59,6 @@
   },
   "engines": {
     "node": ">=22.0.0"
-  },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org/",
-    "access": "public"
   },
   "repository": {
     "type": "git",

@@ -13,6 +13,7 @@ import {
   getActorByHandle,
   getActorPrivateKey,
   type ActorActivationUser,
+  type ActorReadOptions,
   type StoredActor,
 } from '../src/services/ActorService.js';
 
@@ -244,6 +245,111 @@ describe('Owner-bound actor activation', () => {
     seed(fixture({ publicKeyPem: otherKeyPair.publicKey }));
     expect(() => getActorByHandle(USER.handle, OWNER_ID)).toThrow(/key verification failed/);
     expect(() => getActorPrivateKey(USER.handle, OWNER_ID)).toThrow(/key verification failed/);
+  });
+
+  it('accepts owner strings and options without changing bound identity or custody', () => {
+    seed(fixture());
+    const original = storedBytes();
+    configureActivityPub({
+      activitypubDir: directory,
+      siteBaseUrl: 'https://hub.tinyland.dev',
+      userActorBaseUrl: USER_ORIGIN,
+      liveUserActorBaseUrl: `${USER_ORIGIN}/`,
+    });
+    const expected = getActorByHandle(USER.handle, OWNER_ID);
+    for (const options of [
+      undefined,
+      {},
+      { useLiveUserActorBaseUrl: false },
+      { useLiveUserActorBaseUrl: true },
+      { expectedOwnerId: OWNER_ID },
+      { expectedOwnerId: OWNER_ID, useLiveUserActorBaseUrl: false },
+      { expectedOwnerId: OWNER_ID, useLiveUserActorBaseUrl: true },
+    ]) {
+      expect(getActorByHandle(USER.handle, options)).toEqual(expected);
+    }
+    expect(expected?.id).toBe(`${USER_ORIGIN}/@alice`);
+    expect(storedBytes()).toBe(original);
+    expect(fs.renameSync).not.toHaveBeenCalled();
+  });
+
+  it('rejects a different live view without re-anchoring or rewriting bound custody', () => {
+    seed(fixture());
+    const original = storedBytes();
+    configureActivityPub({
+      activitypubDir: directory,
+      siteBaseUrl: 'https://hub.tinyland.dev',
+      userActorBaseUrl: USER_ORIGIN,
+      liveUserActorBaseUrl: 'https://other-public.example',
+    });
+    for (const expectedOwnerId of [undefined, OWNER_ID]) {
+      expect(() => getActorByHandle(USER.handle, {
+        useLiveUserActorBaseUrl: true, expectedOwnerId,
+      })).toThrow(/live origin does not match/);
+    }
+    expect(getActorByHandle(USER.handle, OWNER_ID)?.id).toBe(`${USER_ORIGIN}/@alice`);
+    expect(storedBytes()).toBe(original);
+    expect(fs.renameSync).not.toHaveBeenCalled();
+  });
+
+  it('does not use the live origin to repair a changed canonical personal origin', () => {
+    seed(fixture());
+    const original = storedBytes();
+    configureActivityPub({
+      activitypubDir: directory,
+      siteBaseUrl: 'https://hub.tinyland.dev',
+      userActorBaseUrl: 'https://different-personal.example',
+      liveUserActorBaseUrl: USER_ORIGIN,
+    });
+    expect(() => getActorByHandle(USER.handle, {
+      expectedOwnerId: OWNER_ID, useLiveUserActorBaseUrl: true,
+    })).toThrow(/origin does not match/);
+    expect(storedBytes()).toBe(original);
+    expect(fs.renameSync).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { expectedOwnerId: 'different-principal' },
+    { expectedOwnerId: 'different-principal', useLiveUserActorBaseUrl: true },
+    { expectedOwnerId: '' },
+    { expectedOwnerId: '   ', useLiveUserActorBaseUrl: true },
+  ])('rejects owner mismatch or emptiness in options %j', (options) => {
+    seed(fixture());
+    const original = storedBytes();
+    expect(() => getActorByHandle(USER.handle, options)).toThrow(/owner does not match|stable owner identity/);
+    expect(storedBytes()).toBe(original);
+    expect(fs.renameSync).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    null, true, 17, [],
+    { useLiveUserActorBaseUrl: 'true' },
+    { useLiveUserActorBaseUrl: null },
+    { expectedOwnerId: null },
+    { expectedOwnerId: 17 },
+  ])('rejects malformed read options %j before filesystem access', (options) => {
+    expect(() => getActorByHandle(USER.handle, options as unknown as ActorReadOptions))
+      .toThrow(/Invalid .* read options|stable owner identity/);
+    expect(fs.readFileSync).not.toHaveBeenCalled();
+    expect(fs.renameSync).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['malformed ciphertext', () => ({ privateKeyPem: 'enc:bad:envelope' }), /Invalid .* envelope/],
+    ['mismatched keys', () => ({ publicKeyPem: otherKeyPair.publicKey }), /key verification failed/],
+  ] as const)('preserves %s validation under each actor-read argument form', (_name, overrides, message) => {
+    seed(fixture(overrides()));
+    const original = storedBytes();
+    for (const options of [
+      undefined, OWNER_ID, {},
+      { expectedOwnerId: OWNER_ID },
+      { useLiveUserActorBaseUrl: true },
+      { useLiveUserActorBaseUrl: true, expectedOwnerId: OWNER_ID },
+    ]) {
+      expect(() => getActorByHandle(USER.handle, options)).toThrow(message);
+    }
+    expect(storedBytes()).toBe(original);
+    expect(fs.renameSync).not.toHaveBeenCalled();
   });
 
   it('requires the owner before deleting owner-bound custody', () => {
