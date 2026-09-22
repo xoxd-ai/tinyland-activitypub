@@ -62,11 +62,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tinyland-inc/tinyland-activitypub.git"
+    "url": "git+https://github.com/xoxd-ai/tinyland-activitypub.git"
   },
   "packageManager": "pnpm@10.13.1",
-  "homepage": "https://github.com/tinyland-inc/tinyland-activitypub",
+  "homepage": "https://github.com/xoxd-ai/tinyland-activitypub",
   "bugs": {
-    "url": "https://github.com/tinyland-inc/tinyland-activitypub/issues"
+    "url": "https://github.com/xoxd-ai/tinyland-activitypub/issues"
   }
 }

@@ -5,11 +5,12 @@
 Published tag `v0.3.2` is `ad310df116875d5f0963c4585dce12577c4b9deb`.
 Canonical main was `6a15b7289c00847db6b42c32375859af0d4540c4` at the
 2026-09-22 read-only audit. The runtime delta from the tag to that main is
-empty; those later commits change workflow policy only. The held source at
-`e2104b81c3bfcf4e686bf348855eac004649e100` is based on 0.3.1 and must not be
-published as an unchanged successor to 0.3.2. The integration described below
-is now prepared as uncommitted source; no local execution, release or consumer
-adoption is claimed.
+empty; those later commits change workflow policy only. The earlier held
+source `e2104b81c3bfcf4e686bf348855eac004649e100` was based on 0.3.1 and could
+not safely replace 0.3.2 unchanged. The compatibility patch was recorded in
+`9dcf42599c0a77f4faa240577f806cb92906595b`; local ancestry reconciliation now
+merges that candidate with exact main `6a15b7289c00847db6b42c32375859af0d4540c4`.
+No local execution, release or consumer adoption is claimed.
 
 | Surface | Released 0.3.2 | Held owner-bound source before integration |
 | --- | --- | --- |
@@ -53,6 +54,26 @@ The config property and service read option are part of the released surface.
 The implementation is source-only and still requires review and qualified
 tests. It does not reserve or publish 0.3.3, migrate identities, or authorize
 app changes.
+
+## Local merge resolution and upstream coverage
+
+- `src/config.ts` and `src/services/ActorService.ts` retain the reviewed
+  compatibility implementation from `9dcf425` byte-for-byte: the released
+  config/getter/read option plus distinct personal-authority and owner checks.
+  Auto-merge's duplicate getter and misplaced legacy rendering block were
+  removed during resolution, not left as competing implementations.
+- `tests/apex-ap-leak.test.ts` retains the exact upstream blob, including its
+  three default/explicit-live/fallback cases. The separate new compatibility
+  and owner-integrity suites remain intact; none were executed locally.
+- `package.json` adopts upstream's renamed repository/homepage/bugs URLs and
+  keeps candidate 0.3.3 with no `publishConfig`. The metadata regression now
+  guards those canonical URLs. Root MODULE and Bazel `pkg` remain 0.3.3.
+- Modify/delete conflicts for both legacy workflows resolve to deletion;
+  their v3.2.1 calls and provider capabilities are not restored. The released
+  v5.1.1 candidate remains inert pending admission.
+- No dependency or lock bytes change. A signed two-parent commit establishes
+  ancestry only; actual qualified tests/artifact checks and lock refresh/replay
+  remain required for the integrated candidate.
 
 ## App adoption delta to coordinate
 

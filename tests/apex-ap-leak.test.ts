@@ -345,3 +345,97 @@ describe("TIN-1456: stored actors are re-anchored on the federation origin", () 
     expect(actor!.followers).toBe(`${HUB_ORIGIN}/@jesssullivan/followers`);
   });
 });
+
+describe("TIN-2111 (ratified 2026-09-20): the live user actor gets its own ids", () => {
+  const MOTHERSHIP_ORIGIN = "https://mothership.xoxd.ai";
+
+  beforeEach(() => {
+    resetActivityPubConfig();
+  });
+
+  afterEach(() => {
+    resetActivityPubConfig();
+  });
+
+  async function seedStoredActor(dir: string): Promise<void> {
+    const { mkdirSync, writeFileSync } = await import("fs");
+    const { join } = await import("path");
+
+    mkdirSync(join(dir, "actors"), { recursive: true });
+    writeFileSync(
+      join(dir, "actors", "jesssullivan.json"),
+      JSON.stringify({
+        handle: "jesssullivan",
+        id: `${APEX_ORIGIN}/@jesssullivan`,
+        actorType: "Person",
+        displayName: "Jess Sullivan",
+        bio: "",
+        publicKeyId: `${APEX_ORIGIN}/@jesssullivan#main-key`,
+        publicKeyPem:
+          "-----BEGIN PUBLIC KEY-----\nstub\n-----END PUBLIC KEY-----",
+        privateKeyPem: "",
+        discoverable: true,
+        indexable: true,
+        manuallyApprovesFollowers: false,
+        createdAt: "2025-01-01T00:00:00Z",
+        updatedAt: "2025-01-01T00:00:00Z",
+      }),
+      "utf-8",
+    );
+  }
+
+  it("without the option, getActorByHandle is unchanged: still the broker/siteBaseUrl origin", async () => {
+    const { mkdtempSync } = await import("fs");
+    const { tmpdir } = await import("os");
+    const { join } = await import("path");
+
+    const dir = mkdtempSync(join(tmpdir(), "tin-2111-actors-"));
+    await seedStoredActor(dir);
+    configureActivityPub({ activitypubDir: dir });
+
+    const actor = getActorByHandle("jesssullivan");
+
+    expect(actor!.id).toBe(`${HUB_ORIGIN}/@jesssullivan`);
+  });
+
+  it("with useLiveUserActorBaseUrl, re-anchors on liveUserActorBaseUrl instead of siteBaseUrl", async () => {
+    const { mkdtempSync } = await import("fs");
+    const { tmpdir } = await import("os");
+    const { join } = await import("path");
+
+    const dir = mkdtempSync(join(tmpdir(), "tin-2111-actors-"));
+    await seedStoredActor(dir);
+    configureActivityPub({
+      activitypubDir: dir,
+      liveUserActorBaseUrl: MOTHERSHIP_ORIGIN,
+    });
+
+    const actor = getActorByHandle("jesssullivan", {
+      useLiveUserActorBaseUrl: true,
+    });
+
+    expect(actor).not.toBeNull();
+    expectNoApexNoPublic(actor);
+    expect(actor!.id).toBe(`${MOTHERSHIP_ORIGIN}/@jesssullivan`);
+    expect(actor!.publicKey.id).toBe(`${MOTHERSHIP_ORIGIN}/@jesssullivan#main-key`);
+    expect(actor!.inbox).toBe(`${MOTHERSHIP_ORIGIN}/@jesssullivan/inbox`);
+    expect(actor!.outbox).toBe(`${MOTHERSHIP_ORIGIN}/@jesssullivan/outbox`);
+    expect(actor!.followers).toBe(`${MOTHERSHIP_ORIGIN}/@jesssullivan/followers`);
+  });
+
+  it("with useLiveUserActorBaseUrl but no liveUserActorBaseUrl configured, falls back to siteBaseUrl", async () => {
+    const { mkdtempSync } = await import("fs");
+    const { tmpdir } = await import("os");
+    const { join } = await import("path");
+
+    const dir = mkdtempSync(join(tmpdir(), "tin-2111-actors-"));
+    await seedStoredActor(dir);
+    configureActivityPub({ activitypubDir: dir });
+
+    const actor = getActorByHandle("jesssullivan", {
+      useLiveUserActorBaseUrl: true,
+    });
+
+    expect(actor!.id).toBe(`${HUB_ORIGIN}/@jesssullivan`);
+  });
+});

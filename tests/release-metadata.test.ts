@@ -12,6 +12,9 @@ describe('canonical ActivityPub release metadata', () => {
       .filter((block) => /^\s*name\s*=\s*"pkg"\s*,?$/m.test(block));
 
     expect(packageJson.name).toBe('@tummycrypt/tinyland-activitypub');
+    expect(packageJson.repository.url).toBe('git+https://github.com/xoxd-ai/tinyland-activitypub.git');
+    expect(packageJson.homepage).toBe('https://github.com/xoxd-ai/tinyland-activitypub');
+    expect(packageJson.bugs.url).toBe('https://github.com/xoxd-ai/tinyland-activitypub/issues');
     expect(packageJson).not.toHaveProperty('publishConfig');
     expect(typeof packageJson.version).toBe('string');
     expect(packageJson.version.length).toBeGreaterThan(0);

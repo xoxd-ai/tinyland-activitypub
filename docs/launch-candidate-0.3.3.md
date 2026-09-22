@@ -43,11 +43,16 @@ both config meanings and accepts the released options object or owner string.
 It is prepared source, not a qualified compatibility receipt. New regression
 cases have not been executed in this static-only pass.
 
-Source ancestry remains unreconciled: this worktree still descends from 0.3.1,
-not current main. Restoring the released runtime API is not a merge/rebase
-receipt. Before release, review/integrate the current-main source line and
-already published metadata changes without restoring retired provider paths;
-qualify that exact integrated revision, not this branch's historical baseline.
+The local ancestry reconciliation merges prepared candidate
+`9dcf42599c0a77f4faa240577f806cb92906595b` with exact fetched main
+`6a15b7289c00847db6b42c32375859af0d4540c4`. It includes the immutable released
+0.3.2 lineage, preserves upstream's `xoxd-ai` repository/homepage/bugs URLs,
+and retains all three upstream live-actor regression cases verbatim in
+`tests/apex-ap-leak.test.ts`. Version conflicts retain 0.3.3; the two obsolete
+provider workflows remain deleted under TIN-89. The reviewed runtime
+compatibility implementation is unchanged by the merge resolution. This is
+local source/history reconciliation, not executed compatibility proof; qualify
+the resulting exact merge revision, not either historical parent.
 
 ## Compatibility and migration boundaries
 

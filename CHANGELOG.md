@@ -8,6 +8,8 @@ and [activation/migration guidance](docs/actor-activation.md).
 The earlier provisional 0.3.2 was superseded by an independently published
 release. Its live-user actor option is now preserved alongside the owner-bound
 API in source, pending qualified checks; no released tag or registry is changed.
+The candidate also locally reconciles upstream main `6a15b728` ancestry,
+retains the released regression cases and adopts the renamed package URLs.
 
 ### Added
 
