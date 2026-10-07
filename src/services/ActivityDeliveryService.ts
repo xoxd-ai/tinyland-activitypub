@@ -22,6 +22,7 @@ import {
 import { join } from 'path';
 import crypto from 'crypto';
 import { createSignedRequest } from './HttpSignatureService.js';
+import { publicFederationFetch } from '../utils/publicFederationFetch.js';
 
 
 
@@ -367,15 +368,14 @@ async function deliverActivityToRecipient(
     
     requestInit.method = signedRequest.method;
     requestInit.headers = Object.fromEntries(signedRequest.headers.entries());
-    requestInit.body = signedRequest.body;
+    requestInit.body = await signedRequest.text();
   }
 
   
-  const response = await fetch(inboxUrl, requestInit);
+  const response = await publicFederationFetch(inboxUrl, requestInit);
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new DeliveryError(`HTTP ${response.status}: ${errorText}`);
+    throw new DeliveryError(`HTTP ${response.status}`);
   }
 
   console.log(`[DeliveryService] Delivered to ${recipientUri} (${inboxUrl})`);
@@ -389,7 +389,7 @@ async function getActorInbox(actorUri: string): Promise<string | null> {
 
   try {
     
-    const response = await fetch(actorUri, {
+    const response = await publicFederationFetch(actorUri, {
       headers: {
         'Accept': 'application/activity+json'
       },
@@ -407,8 +407,8 @@ async function getActorInbox(actorUri: string): Promise<string | null> {
     }
 
     return null;
-  } catch (err) {
-    console.error(`[DeliveryService] Failed to fetch actor inbox: ${actorUri}`, err);
+  } catch {
+    console.error('[DeliveryService] Failed to fetch or validate actor inbox');
     return null;
   }
 }

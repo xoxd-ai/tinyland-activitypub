@@ -9,7 +9,7 @@
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import type { OrderedCollection, Note as NoteObject, Article } from '../types/activitystreams.js';
-import { getSiteBaseUrl, getActorUri, getContentDir } from '../config.js';
+import { getUserActorBaseUrl, getActorUri, getContentDir } from '../config.js';
 
 
 
@@ -69,7 +69,7 @@ function parseFrontmatter(content: string): { data: Record<string, unknown>; con
 
 export function getFeaturedPosts(handle: string, contentDir?: string): FeaturedItem[] {
   const featured: FeaturedItem[] = [];
-  const baseUrl = getSiteBaseUrl();
+  const baseUrl = getUserActorBaseUrl();
   // TIN-1931: content lives under <contentDir>/users/<handle>/, not the
   // legacy src/content root.
   const resolvedContentDir = contentDir || getContentDir();

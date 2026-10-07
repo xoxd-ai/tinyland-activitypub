@@ -7,7 +7,7 @@
 
 import type { Actor } from '../types/actor.js';
 import { getActorByHandle } from './ActorService.js';
-import { getSiteBaseUrl, getInstanceDomain, getActivityPubConfig } from '../config.js';
+import { getUserActorBaseUrl, getUserActorDomain, getActivityPubConfig, getActorUri } from '../config.js';
 
 
 
@@ -83,8 +83,8 @@ export function parseResource(resource: string): {
 
 export async function getWebFingerForResource(resource: string): Promise<WebFingerResource | null> {
   const parsed = parseResource(resource);
-  const instanceDomain = getInstanceDomain();
-  const baseUrl = getSiteBaseUrl();
+  const instanceDomain = getUserActorDomain();
+  const baseUrl = getUserActorBaseUrl();
 
   if (!parsed) {
     return null;
@@ -97,7 +97,9 @@ export async function getWebFingerForResource(resource: string): Promise<WebFing
 
   const { handle } = parsed;
 
-  if (!handle) {
+  // This entrypoint is also used without validateWebFingerQuery. Never pass
+  // an unchecked resource handle to the filesystem-backed actor lookup.
+  if (!handle || !/^[a-zA-Z0-9_-]+$/.test(handle)) {
     return null;
   }
 
@@ -109,6 +111,9 @@ export async function getWebFingerForResource(resource: string): Promise<WebFing
   if (!actor) {
     const config = getActivityPubConfig();
     if (config.resolveUser) {
+      // Compatibility fallback only: the host must restrict this resolver and
+      // public discovery to users whose federation activation is authorized.
+      // Resolving a user does not establish private-key custody or activation.
       const user = await config.resolveUser(handle);
       if (!user) {
         return null; 
@@ -119,7 +124,7 @@ export async function getWebFingerForResource(resource: string): Promise<WebFing
   }
 
   
-  const actorId = `${baseUrl}/@${handle}`;
+  const actorId = getActorUri(handle);
 
   
   const profileUrl = `${baseUrl}/@${handle}`;
@@ -153,9 +158,11 @@ export async function getWebFingerForResource(resource: string): Promise<WebFing
 
 
 export function webFingerFromActor(actor: Actor): WebFingerResource {
-  const instanceDomain = getInstanceDomain();
-  const baseUrl = getSiteBaseUrl();
-  const resource = `acct:${actor.preferredUsername}@${instanceDomain}`;
+  // This helper accepts personal and brand actors, including explicit origins.
+  // Derive discovery identity from the supplied actor, not a global default.
+  const actorUrl = new URL(actor.id);
+  const baseUrl = actorUrl.origin;
+  const resource = `acct:${actor.preferredUsername}@${actorUrl.hostname}`;
 
   return {
     subject: resource,
@@ -188,7 +195,7 @@ export function validateWebFingerQuery(params: URLSearchParams): {
   error?: string;
 } {
   const resource = params.get('resource');
-  const instanceDomain = getInstanceDomain();
+  const instanceDomain = getUserActorDomain();
 
   if (!resource) {
     return {

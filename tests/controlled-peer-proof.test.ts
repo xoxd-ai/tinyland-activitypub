@@ -23,6 +23,12 @@ import {
 } from '../src/services/TombstoneService.js';
 import type { Activity } from '../src/types/activitystreams.js';
 
+// These protocol fixtures deliberately stub transport; public-network policy is
+// independently exercised in public-federation-fetch.test.ts without sockets.
+vi.mock('../src/utils/publicFederationFetch.js', () => ({
+  publicFederationFetch: (input: string | URL | Request, init?: RequestInit) => fetch(input, init),
+}));
+
 function generateRsaPair(): { publicKeyPem: string; privateKeyPem: string } {
   const { publicKey, privateKey } = crypto.generateKeyPairSync('rsa', {
     modulusLength: 2048,
@@ -220,7 +226,7 @@ describe('controlled peer ActivityPub proof harness', () => {
         recipient: peer.id,
         status: 'error',
         attempt: 1,
-        error: 'HTTP 503: retry later',
+        error: 'HTTP 503',
       }),
     ]);
 

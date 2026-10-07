@@ -19,12 +19,14 @@ jobs:
       node_versions: '["22"]'
       publish_node_version: "22"
       pnpm_version: "10.13.1"
-      # npm-resolution retired; validate via bazel (TIN-1716)
+      # npm-resolution retired; validate via bazel (TIN-1716). The tests and
+      # the package artifact check run as Bazel tests; ts_project in //:pkg
+      # is the typecheck. No literal no-op steps (RS2, TIN-89).
       typecheck_command: ""
-      unit_test_command: ""
-      build_command: "true"
-      package_check_command: "true"
-      bazel_targets: "//:pkg //:test"
+      unit_test_command: "npx --yes @bazel/bazelisk test //:test --config=ci --test_output=errors"
+      build_command: "npx --yes @bazel/bazelisk build //:pkg --config=ci"
+      package_check_command: "npx --yes @bazel/bazelisk test //:package_artifact_test --config=ci --test_output=errors"
+      bazel_targets: "//:pkg //:test //:package_artifact_test"
       package_dir: ./bazel-bin/pkg
       npm_access: public
       npm_publish_mode: disabled

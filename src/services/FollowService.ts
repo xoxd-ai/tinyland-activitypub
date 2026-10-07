@@ -9,6 +9,7 @@ import { queueForDelivery } from './ActivityDeliveryService.js';
 import { addFollowing, removeFollowing, getFollowing } from './FollowersService.js';
 import type { Follow, Undo } from '../types/activitystreams.js';
 import type { Following } from './FollowersService.js';
+import { publicFederationFetch } from '../utils/publicFederationFetch.js';
 
 
 
@@ -219,7 +220,7 @@ export async function fetchRemoteActor(actorUri: string): Promise<RemoteActor | 
   const config = getActivityPubConfig();
 
   try {
-    const response = await fetch(actorUri, {
+    const response = await publicFederationFetch(actorUri, {
       headers: {
         'Accept': 'application/activity+json, application/ld+json; profile="https://www.w3.org/ns/activitystreams"'
       },
@@ -235,7 +236,7 @@ export async function fetchRemoteActor(actorUri: string): Promise<RemoteActor | 
 
     
     if (!actor.id || !actor.inbox || !actor.preferredUsername) {
-      console.error(`[FollowService] Invalid actor data from ${actorUri}:`, actor);
+      console.error('[FollowService] Invalid remote actor document');
       return null;
     }
 
@@ -247,8 +248,8 @@ export async function fetchRemoteActor(actorUri: string): Promise<RemoteActor | 
       inbox: actor.inbox,
       type: actor.type
     };
-  } catch (error) {
-    console.error(`[FollowService] Error fetching remote actor ${actorUri}:`, error);
+  } catch {
+    console.error('[FollowService] Failed to fetch or validate remote actor');
     return null;
   }
 }

@@ -14,7 +14,11 @@ export default defineConfig({
     include: ['tests/**/*.test.ts'],
     pool: 'forks',
     isolate: true,
-    testTimeout: 10000,
+    // Several suites generate and verify RSA-2048 key pairs. Under host
+    // contention (load 55-140 on 6 CPUs) correct cases and their setup hooks
+    // exceeded 10 s; these ceilings only bound hangs, so keep them generous.
+    testTimeout: 60000,
+    hookTimeout: 60000,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

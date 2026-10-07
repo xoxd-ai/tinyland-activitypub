@@ -3,7 +3,7 @@
 
 
 
-import { getSiteBaseUrl, getInstanceDomain } from '../config.js';
+import { getSiteBaseUrl, getUserActorDomain, getActorUri } from '../config.js';
 
 
 
@@ -68,7 +68,7 @@ export function parseMentions(content: string): ParsedMention[] {
       
       handle = handlePart;
       local = true;
-      domain = getInstanceDomain();
+      domain = getUserActorDomain();
     }
 
     mentions.push({
@@ -93,7 +93,7 @@ export function buildMentionUri(
   local = true
 ): string {
   if (local) {
-    return `${getSiteBaseUrl()}/@${handle}`;
+    return getActorUri(handle);
   }
 
   return `https://${domain}/@${handle}`;

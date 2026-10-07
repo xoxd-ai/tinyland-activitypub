@@ -33,3 +33,5 @@ export {
   needsDelivery,
   type ActivityType
 } from './activity.js';
+
+export { publicFederationFetch, PublicFederationFetchError } from './publicFederationFetch.js';

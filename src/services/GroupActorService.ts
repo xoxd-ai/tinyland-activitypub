@@ -16,7 +16,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, unlink
 import { join } from 'path';
 import crypto from 'crypto';
 import type { Group } from '../types/activitystreams.js';
-import { getSiteBaseUrl, getActivityPubDir } from '../config.js';
+import { getSiteBaseUrl, getActivityPubDir, getActorUri } from '../config.js';
 import { encryptPrivateKey, decryptPrivateKey } from './ActorService.js';
 
 
@@ -136,7 +136,7 @@ export function createGroup(input: CreateGroupInput): StoredGroup {
 
   
   const moderators = (input.moderatorHandles || []).map(
-    (handle) => `${baseUrl}/@${handle}`
+    (handle) => getActorUri(handle)
   );
 
   const now = new Date().toISOString();
@@ -216,7 +216,6 @@ export function updateGroup(
   handle: string,
   updates: Partial<CreateGroupInput>
 ): StoredGroup | null {
-  const baseUrl = getSiteBaseUrl();
   const existing = getStoredGroup(handle);
 
   if (!existing) {
@@ -240,7 +239,7 @@ export function updateGroup(
 
   if (updates.moderatorHandles) {
     updated.moderators = updates.moderatorHandles.map(
-      (h) => `${baseUrl}/@${h}`
+      (h) => getActorUri(h)
     );
   }
 

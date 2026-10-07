@@ -5,10 +5,13 @@
 
 export {
   type ActorUser,
+  type ActorActivationUser,
+  type ActorReadOptions,
   type ActorProfile,
   type StoredActor,
   generateKeyPair,
   createActorFromUser,
+  ensureActorForUser,
   getActorByHandle,
   getActorPrivateKey,
   deleteActor

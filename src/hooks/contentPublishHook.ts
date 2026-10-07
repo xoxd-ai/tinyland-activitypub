@@ -10,7 +10,7 @@ import { createObject } from '../services/ContentObjectService.js';
 import { getFollowerUris } from '../services/FollowersService.js';
 import {
   getFollowersUri,
-  getSiteBaseUrl,
+  isLocalUri,
   gatedAudience
 } from '../config.js';
 import {
@@ -394,7 +394,6 @@ export async function announceContent(
 
     const actorUri = actor.id;
     const followersUri = getFollowersUri(announcerHandle);
-    const baseUrl = getSiteBaseUrl();
 
     // TIN-1456: as#Public is gated — controlled audience only (see gatedAudience).
     const { to, cc } = gatedAudience(followersUri, 'public');
@@ -419,9 +418,7 @@ export async function announceContent(
 
     try {
       const contentUri = new URL(contentUrl);
-      const instanceDomain = new URL(baseUrl).hostname;
-
-      if (contentUri.hostname !== instanceDomain) {
+      if (!isLocalUri(contentUrl)) {
         const authorMatch = contentUri.pathname.match(/^\/@([^/]+)/);
         if (authorMatch) {
           const authorUri = `https://${contentUri.hostname}/@${authorMatch[1]}`;
@@ -534,7 +531,6 @@ async function getDeliveryTargets(
   additionalMentions?: string[]
 ): Promise<string[]> {
   const targets: string[] = [];
-  const baseUrl = getSiteBaseUrl();
 
   const mentionedActorUris = mentions
     .filter(m => !m.local)
@@ -569,11 +565,10 @@ async function getDeliveryTargets(
       break;
   }
 
-  const instanceDomain = new URL(baseUrl).hostname;
   return [...new Set(targets)].filter(uri => {
     try {
-      const url = new URL(uri);
-      return url.hostname !== instanceDomain;
+      new URL(uri);
+      return !isLocalUri(uri);
     } catch {
       return false;
     }
