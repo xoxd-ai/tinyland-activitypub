@@ -1,13 +1,15 @@
 # Changelog
 
-## 0.3.3 — Unreleased candidate
+## 0.3.3 — 2026-10-07
 
-Candidate source only; no tag, release, registry entry, consumer adoption or
-runtime rollout is implied. See [candidate scope](docs/launch-candidate-0.3.3.md)
-and [activation/migration guidance](docs/actor-activation.md).
+Released under operator ruling RS2 as GitHub tag `v0.3.3` plus an append-only
+bazel-registry entry; no npm or GitHub Packages publication. Consumer adoption
+and runtime rollout are separate steps. See
+[candidate scope](docs/launch-candidate-0.3.3.md) and
+[activation/migration guidance](docs/actor-activation.md).
 The earlier provisional 0.3.2 was superseded by an independently published
-release. Its live-user actor option is now preserved alongside the owner-bound
-API in source, pending qualified checks; no released tag or registry is changed.
+release. Its live-user actor option is preserved alongside the owner-bound API;
+released tags and registry entries for 0.3.2 and earlier are unchanged.
 The candidate also locally reconciles upstream main `6a15b728` ancestry,
 retains the released regression cases and adopts the renamed package URLs.
 
@@ -30,10 +32,13 @@ retains the released regression cases and adopts the renamed package URLs.
 - A finite Bazel artifact test for the actual `//:pkg` directory, all declared
   ESM/declaration exports, manifest parity and locked `publint` without a second
   package-manager pack. Only errors fail; warnings remain visible.
-- TIN-89 BCR-only delivery policy: remove legacy provider-capable CI/publish
-  callers and npm `publishConfig`. The GF caller remains inert until its
-  released, admitted contract is reviewed; no replacement publisher or
-  green/no-op validation workflow is introduced.
+- TIN-89 BCR-only delivery policy: npm `publishConfig` is removed and no
+  provider publisher runs. Per operator ruling RS2 (2026-10-07) the `ci.yml`
+  and `publish.yml` callers are kept as validation only: npm publishing is
+  disabled, no GitHub Packages name is set, `publish.yml` drops its write
+  permissions, and `ci.yml` now runs `bazel test //:test` and
+  `//:package_artifact_test` instead of literal no-op steps. The GF caller
+  remains inert until its released, admitted contract is reviewed.
 
 ### Fixed and constrained
 

@@ -28,9 +28,11 @@ GitHub tag/source integrity and an append-only BCR entry remain required.
 version now agree on 0.3.3. At the branch's 0.3.1 base, package/module were 0.3.1
 while BUILD declared 0.3.0; this candidate explicitly repairs that drift.
 Package names, dependencies, compatibility level, registry configuration and
-downstream pins are unchanged. The legacy provider-capable CI/publish callers
-and npm `publishConfig` are removed; the released-pin GF candidate remains
-outside `.github/workflows/`. There is no active replacement or no-op CI job.
+downstream pins are unchanged. npm `publishConfig` is removed; the released-pin
+GF candidate remains outside `.github/workflows/`. Operator ruling RS2
+(2026-10-07) restored `ci.yml` and `publish.yml` as validation-only callers
+(no provider publisher, no write permissions, no no-op steps); `ci.yml` runs
+`bazel test //:test //:package_artifact_test` and `bazel build //:pkg`.
 
 ## Released API integration
 
@@ -48,8 +50,8 @@ The local ancestry reconciliation merges prepared candidate
 `6a15b7289c00847db6b42c32375859af0d4540c4`. It includes the immutable released
 0.3.2 lineage, preserves upstream's `xoxd-ai` repository/homepage/bugs URLs,
 and retains all three upstream live-actor regression cases verbatim in
-`tests/apex-ap-leak.test.ts`. Version conflicts retain 0.3.3; the two obsolete
-provider workflows remain deleted under TIN-89. The reviewed runtime
+`tests/apex-ap-leak.test.ts`. Version conflicts retain 0.3.3; the two
+workflows were later restored as validation-only callers (RS2). The reviewed runtime
 compatibility implementation is unchanged by the merge resolution. This is
 local source/history reconciliation, not executed compatibility proof; qualify
 the resulting exact merge revision, not either historical parent.

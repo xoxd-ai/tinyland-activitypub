@@ -91,7 +91,7 @@ vitest_bin.vitest_test(
             ".github/workflows/*.yml",
             ".github/workflows/*.yaml",
         ],
-        allow_empty = True,  # Legacy callers retired; the GF candidate remains inert.
+        allow_empty = True,  # ci.yml/publish.yml validate only; the GF candidate remains inert.
     ),
     args = [
         "run",

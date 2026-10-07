@@ -71,7 +71,16 @@ jobs:
   });
 
   it('keeps the caller inert and exposes all active workflow files to the test target', async () => {
-    expect(await activeWorkflows()).toEqual([]);
+    // RS2 restores the two validation-only callers; the GF caller stays inert.
+    expect(await activeWorkflows()).toEqual(['ci.yml', 'publish.yml']);
+    for (const name of await activeWorkflows()) {
+      const workflow = await readText(`.github/workflows/${name}`);
+      expect(workflow).not.toContain('spoke-ci-v4.yml');
+      expect(workflow).toContain('npm_publish_mode: disabled');
+      expect(workflow).not.toMatch(/github_package_name|packages:\s*write|id-token:\s*write|NPM_TOKEN|TINYLAND_GITHUB_PACKAGES_TOKEN/);
+      expect(workflow).not.toMatch(/_command:\s*"true"/);
+      expect(workflow).toContain('//:package_artifact_test');
+    }
     expect(await readText(candidatePath)).toContain('# INERT SOURCE CANDIDATE');
     const build = await readText('BUILD.bazel');
     expect(build).toContain('".github/workflows/*.yml"');

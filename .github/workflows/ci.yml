@@ -1,0 +1,34 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+  packages: read
+jobs:
+  package:
+    uses: xoxd-ai/ci-templates/.github/workflows/js-bazel-package.yml@v3.2.1
+    with:
+      runner_mode: repo_owned
+      runner_labels_json: ${{ vars.PRIMARY_LINUX_RUNNER_LABELS_JSON }}
+      workspace_mode: isolated
+      node_versions: '["22"]'
+      publish_node_version: "22"
+      pnpm_version: "10.13.1"
+      # npm-resolution retired; validate via bazel (TIN-1716). The tests and
+      # the package artifact check run as Bazel tests; ts_project in //:pkg
+      # is the typecheck. No literal no-op steps (RS2, TIN-89).
+      typecheck_command: ""
+      unit_test_command: "npx --yes @bazel/bazelisk test //:test --config=ci --test_output=errors"
+      build_command: "npx --yes @bazel/bazelisk build //:pkg --config=ci"
+      package_check_command: "npx --yes @bazel/bazelisk test //:package_artifact_test --config=ci --test_output=errors"
+      bazel_targets: "//:pkg //:test //:package_artifact_test"
+      package_dir: ./bazel-bin/pkg
+      npm_access: public
+      npm_publish_mode: disabled
+      dry_run: true
+    secrets: inherit
