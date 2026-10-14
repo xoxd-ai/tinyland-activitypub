@@ -1,15 +1,44 @@
 # Changelog
 
-## 0.4.0 — 2026-10-10
+## 1.0.0 — 2026-10-14
 
-Absorbs the retired `tummycrypt_tinyland_offer_builder` module
+Major release under rulings RU1, RU5, RU10 and RU13 (estate stack uplift),
+which also absorbs the retired `tummycrypt_tinyland_offer_builder` module
 (`@tummycrypt/tinyland-offer-builder`, standalone repo
-`xoxd-ai/tinyland-offer-builder`, archived) under rulings RU2/RU7. Released as
-a GitHub tag `v0.4.0` plus an append-only bazel-registry entry; no npm or
-GitHub Packages publication (RU6/RU8). The change is additive: existing
-subpaths, the root entry and the runtime stack are unchanged, so this is a
-minor release. The RU1 stack uplift (with its RU10 major bump) is a separate
-release.
+`xoxd-ai/tinyland-offer-builder`, archived) under RU2/RU7. The ActivityPub
+API is unchanged from 0.3.3: every existing export, subpath and signature is
+the same, and `./offer-builder` is new. The build toolchain and the
+first-party Bazel dependency move, so this is the RU10 major. A 0.4.0 was
+prepared with the offer-builder merge alone and never tagged or registered;
+it is folded into this release. Released as a signed GitHub tag `v1.0.0` plus
+an append-only bazel-registry entry; the Bazel module
+`tummycrypt_tinyland_activitypub` is the only distribution path (RU6), and the
+package is now `private` and is not published to npm or GitHub Packages (RU8).
+
+### Changed
+
+- TypeScript 7.0.2 (the native compiler) builds and type-checks the package.
+  `typescript` (7.0.2), `vite` (8.3.3) and `vitest` (5.0.3) are pinned exactly
+  (RU5). `@fast-check/vitest` ^0.5.0 and `publint` ^0.3.25 follow the vitest 5
+  line. The `prepublishOnly` script is removed (RU8).
+- `tsconfig.json` sets `types: ["node"]`, because TypeScript 6 and later no
+  longer load every `@types/*` package by default.
+- MODULE.bazel: `aspect_rules_ts` 3.10.1 with the `typescript` extension at
+  7.0.2 (replacing the `ext` extension at 5.9.3), and
+  `tummycrypt_tinyland_content_types` re-pinned from 0.2.4 to 1.0.0 (its own
+  RU1 major).
+- New `//:typecheck` target (no emit). CI runs it next to `//:pkg`, `//:test`
+  and `//:package_artifact_test`.
+- `.bazelrc` resolves in-house modules from `xoxd-ai/bazel-registry`.
+
+### Migration (all consumers)
+
+- Re-pin `bazel_dep(name = "tummycrypt_tinyland_activitypub", version = "1.0.0")`
+  and drop any `single_version_override` that pins an older ActivityPub
+  version. Root and existing subpath imports do not change.
+- Consumers that still pin `tummycrypt_tinyland_content_types` below 1.0.0
+  are raised to 1.0.0 by MVS (same `compatibility_level`); see the
+  content-types 1.0.0 changelog for its visibility default.
 
 ### Added
 
@@ -33,10 +62,10 @@ release.
   tinyland-content-types. The registry's 0.2.0 entry carried this as the
   `standalone-build-taler.patch` overlay; it is now in source.
 
-### Migration from tummycrypt_tinyland_offer_builder
+### Migration from tummycrypt_tinyland_offer_builder 0.2.x
 
 - Bazel: drop `bazel_dep(name = "tummycrypt_tinyland_offer_builder", ...)` and
-  its `npm_link_package`; require `tummycrypt_tinyland_activitypub` >= 0.4.0.
+  its `npm_link_package`; require `tummycrypt_tinyland_activitypub` 1.0.0.
 - Imports: replace `@tummycrypt/tinyland-offer-builder` with
   `@tummycrypt/tinyland-activitypub/offer-builder`. The API is unchanged.
 - Code that passes the transaction type `talar` must pass `taler`.
