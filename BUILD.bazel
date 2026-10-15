@@ -1,8 +1,9 @@
 """
 BUILD.bazel for @tummycrypt/tinyland-activitypub.
 
-Dual-mode build: works with both pnpm (standalone) and Bazel (CI/production).
-  Standalone: cd packages/tinyland-activitypub && pnpm build
+  Bazel:      bazel build //:pkg //:typecheck && bazel test //...
+  Consumers:  bazel_dep(name = "tummycrypt_tinyland_activitypub", version = "1.0.0")
+              from xoxd-ai/bazel-registry; the package is not published to npm.
 """
 
 load("@aspect_rules_js//js:defs.bzl", "js_test")
@@ -52,8 +53,32 @@ npm_package(
         ":tinyland_activitypub",
     ],
     package = "@tummycrypt/tinyland-activitypub",
-    version = "0.3.3",
+    version = "1.0.0",
     publishable = False,
+    visibility = ["//visibility:public"],
+)
+
+# TypeScript 7.0.2 type check of the library sources (no emit).
+ts_project(
+    name = "typecheck",
+    srcs = glob(
+        ["src/**/*.ts"],
+        exclude = [
+            "src/**/*.test.ts",
+            "src/**/*.spec.ts",
+        ],
+    ) + ["package.json"],
+    declaration = False,
+    no_emit = True,
+    transpiler = "tsc",
+    tsconfig = ":tsconfig.json",
+    validate = False,
+    deps = [
+        ":node_modules",
+        ":node_modules/@tummycrypt/tinyland-content-types",
+        ":node_modules/@types/node",
+        ":node_modules/gray-matter",
+    ],
     visibility = ["//visibility:public"],
 )
 

@@ -27,7 +27,7 @@ jobs:
       unit_test_command: pnpm test
       build_command: pnpm build
       package_check_command: pnpm check:package
-      bazel_targets: "//:pkg //:test //:package_artifact_test"
+      bazel_targets: "//:pkg //:typecheck //:test //:package_artifact_test"
       package_dir: ./bazel-bin/pkg
       npm_access: public
       npm_publish_mode: disabled
