@@ -13,6 +13,11 @@ bazel_dep(name = "rules_nodejs", version = "6.7.3")
 # Inter-module dependencies
 bazel_dep(name = "tummycrypt_tinyland_content_types", version = "1.0.0")
 
+single_version_override(
+    module_name = "tummycrypt_tinyland_content_types",
+    registry = "https://raw.githubusercontent.com/xoxd-ai/bazel-registry/main",
+)
+
 node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
 node.toolchain(node_version = "22.13.1")
 
