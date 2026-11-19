@@ -8,7 +8,7 @@
     flake-utils.lib.eachDefaultSystem (system:
       let pkgs = nixpkgs.legacyPackages.${system}; in {
         devShells.default = pkgs.mkShell {
-          buildInputs = with pkgs; [ bazel_8 nodejs_22 (pnpm_10 or pnpm) ];
+          buildInputs = with pkgs; [ bazelisk nodejs_22 (pnpm_10 or pnpm) ];
           shellHook = ''
             echo "tinyland-activitypub dev shell"
             echo "  node $(node --version)"

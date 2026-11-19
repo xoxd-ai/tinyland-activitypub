@@ -28,7 +28,7 @@ describe('inert ActivityPub GF v4 qualification source', () => {
         },
         'package-check': {
           command: 'build',
-          targets: ['//:pkg'],
+          targets: ['//:pkg', '//:typecheck'],
           capability: 'rbe-linux-x86_64',
           result: { mode: 'status-only' },
         },
